@@ -1,8 +1,6 @@
-#include "cstdio"
-#include "test/test.h"
+#include "window/window.hpp"
 
 int main(){
-    printf("Hello World!\n");
-    fun();
+    Window w;
     return 0;
 }
