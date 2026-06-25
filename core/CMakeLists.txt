@@ -22,6 +22,7 @@ target_sources(${PROJECT_NAME} PRIVATE
     src/utils/logger.cpp
     src/window/window.cpp
     src/renderer/renderer.cpp
+    src/app.cpp
 )
 
 # Include directories
@@ -51,9 +52,9 @@ FetchContent_MakeAvailable(glm)
 add_subdirectory(vendor/glad)
 
 target_link_libraries(${PROJECT_NAME}
-    PRIVATE glfw
-    PRIVATE glad
-    PRIVATE  glm::glm
+    PUBLIC glfw
+    PUBLIC glad
+    PUBLIC  glm::glm
 )
 
 # Warnings

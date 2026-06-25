@@ -1,7 +1,7 @@
-#include "utils/logger.hpp"
+#include "app.hpp"
 
 int main(){
-    Logger log;
+    App app(1000, 500, "Hello World!");
 
-    log.info("Hello World!");
+    app.run();
 }

@@ -1,0 +1,36 @@
+#pragma once
+#include "utils/logger.hpp"
+#include "window/window.hpp"
+
+#include <memory>
+#include <vector>
+
+class AppLayer{
+    public:
+    virtual ~AppLayer() = default;
+
+    virtual void update() = 0;
+    virtual void render() = 0;
+
+    virtual void transition() = 0;
+};
+
+class App{
+    public:
+    App(int width, int height, const std::string& title);
+    ~App();
+
+    void run();
+    void terminate();
+    
+    template<typename t, typename... Args>
+    void newLayer(Args&&... args);
+
+    private:
+    bool running = true;
+    std::vector<std::unique_ptr<AppLayer>> layerStack;
+    static Logger log;
+    std::unique_ptr<Window> window;
+
+    static void errorCallback(int error, const char* description);
+};
