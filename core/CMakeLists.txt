@@ -19,6 +19,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 add_library(${PROJECT_NAME} STATIC)
 
 target_sources(${PROJECT_NAME} PRIVATE
+    src/utils/logger.cpp
     src/window/window.cpp
     src/renderer/renderer.cpp
 )

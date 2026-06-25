@@ -1,6 +1,7 @@
-#include "window/window.hpp"
+#include "utils/logger.hpp"
 
 int main(){
-    Window w;
-    return 0;
+    Logger log;
+
+    log.info("Hello World!");
 }
