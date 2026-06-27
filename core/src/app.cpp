@@ -35,13 +35,17 @@ App::~App() { glfwTerminate(); };
 void App::run() {
   running = true;
 
+  glfwSwapInterval(1);
   while (running) {
+    int width, height;
+    glfwGetFramebufferSize(window->get(), &width, &height);
+    glViewport(0, 0, width, height);
+
     if (glfwWindowShouldClose(window->get())) {
       running = false;
       break;
-    } else {
-      glfwPollEvents();
     }
+    glfwPollEvents();
 
     for (auto &layer : layerStack) {
       layer->update();
@@ -50,13 +54,12 @@ void App::run() {
     for (auto &layer : layerStack) {
       layer->render();
     }
+
+    glfwSwapBuffers(window->get());
   }
 };
 
-template <typename T, typename... Args> void App::newLayer(Args &&...args) {
-  T *layer = new T(std::forward<Args>(args)...);
-  layerStack.emplace_back(layer);
-}
+void App::terminate() { glfwTerminate(); }
 
 void App::errorCallback(int error, const char *description) {
   log.error(std::format("GLFW Error ({}): {}", error, description));

@@ -5,32 +5,34 @@
 #include <memory>
 #include <vector>
 
-class AppLayer{
-    public:
-    virtual ~AppLayer() = default;
+class AppLayer {
+public:
+  virtual ~AppLayer() = default;
 
-    virtual void update() = 0;
-    virtual void render() = 0;
+  virtual void update() = 0;
+  virtual void render() = 0;
 
-    virtual void transition() = 0;
+  virtual void transition() = 0;
 };
 
-class App{
-    public:
-    App(int width, int height, const std::string& title);
-    ~App();
+class App {
+public:
+  App(int width, int height, const std::string &title);
+  ~App();
+  
+  static Logger log;
 
-    void run();
-    void terminate();
-    
-    template<typename t, typename... Args>
-    void newLayer(Args&&... args);
+  void run();
+  void terminate();
 
-    private:
-    bool running = true;
-    std::vector<std::unique_ptr<AppLayer>> layerStack;
-    static Logger log;
-    std::unique_ptr<Window> window;
+  template <typename t, typename... Args> void newLayer(Args &&...args) {
+    layerStack.emplace_back(std::make_unique<t>(std::forward<Args>(args)...));
+  }
 
-    static void errorCallback(int error, const char* description);
+private:
+  bool running = true;
+  std::vector<std::unique_ptr<AppLayer>> layerStack;
+  std::unique_ptr<Window> window;
+
+  static void errorCallback(int error, const char *description);
 };
