@@ -68,3 +68,7 @@ void App::errorCallback(int error, const char* description) {
 float App::time() {
     return glfwGetTime();
 }
+
+Window& App::getWindow() {
+    return *window.get();
+}

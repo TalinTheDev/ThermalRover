@@ -21,11 +21,12 @@ add_library(${PROJECT_NAME} STATIC)
 target_sources(${PROJECT_NAME} PRIVATE
     src/utils/logger.cpp
     src/window/window.cpp
-    "src/renderer/renderer2d.cpp"
+    src/renderer/renderer2d.cpp
     src/renderer/buffer.cpp
     src/types.cpp
     src/app.cpp
     src/renderer/shader.cpp
+    src/layers/debug.cpp
 )
 
 # Include directories
@@ -53,6 +54,9 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(glm)
 
 add_subdirectory(vendor/glad)
+
+target_include_directories(${PROJECT_NAME} PUBLIC vendor/imgui vendor/imgui/backends vendor/imgui/misc/cpp)
+target_sources(${PROJECT_NAME} PUBLIC vendor/imgui/imgui.cpp vendor/imgui/imgui_draw.cpp vendor/imgui/imgui_tables.cpp vendor/imgui/imgui_widgets.cpp vendor/imgui/backends/imgui_impl_glfw.cpp vendor/imgui/backends/imgui_impl_opengl3.cpp vendor/imgui/misc/cpp/imgui_stdlib.cpp)
 
 target_link_libraries(${PROJECT_NAME}
     PUBLIC glfw

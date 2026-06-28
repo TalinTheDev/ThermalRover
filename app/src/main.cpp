@@ -1,12 +1,13 @@
 #include "app.hpp"
+#include "layers/debug.hpp"
 #include "renderer/buffer.hpp"
 #include "renderer/renderer2d.hpp"
 #include "renderer/shader.hpp"
 #include "types.hpp"
+#include <imgui.h>
 #include <memory>
 #include <vector>
 
-#define GLFW_INCLUDE_NONE
 
 class ClearLayer : public AppLayer {
 public:
@@ -51,10 +52,22 @@ private:
     std::unique_ptr<Shader> triangleShader;
 };
 
+void test() {
+    ImGui::Text("test");
+}
+
+void test2() {
+    ImGui::Begin("test2");
+    ImGui::Text("test2");
+    ImGui::End();
+}
+
 int main() {
     App app(1000, 500, "Hello World!");
 
     app.newLayer<ClearLayer>();
     app.newLayer<TriangleLayer>();
+
+    app.newLayer<DebugLayer>(app.getWindow()).push(test).push(test2);
     app.run();
 }

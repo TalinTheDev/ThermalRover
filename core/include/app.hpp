@@ -29,9 +29,14 @@ public:
 
     static float time();
 
-    template <typename t, typename... Args> void newLayer(Args &&...args) {
-        layerStack.emplace_back(std::make_unique<t>(std::forward<Args>(args)...));
+    template <typename t, typename... Args> t& newLayer(Args &&...args) {
+        std::unique_ptr<t> layer = std::make_unique<t>(std::forward<Args>(args)...);
+        t& ref = *layer;
+        layerStack.push_back(std::move(layer));
+        return ref;
     }
+
+    Window& getWindow();
 
 private:
     bool running = true;
