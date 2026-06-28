@@ -1,18 +1,16 @@
 #include "app.hpp"
 #include "utils/logger.hpp"
 #include "window/window.hpp"
-#include <renderer/renderer.hpp>
-
 #include <format>
 #include <memory>
+#include <renderer/renderer2d.hpp>
 #include <string>
-
 #define GLFW_INCLUDE_NONE
 #include <glad/gl.h>
 #include <GLFW/glfw3.h>
 
 Logger App::log;
-Renderer AppLayer::renderer;
+Renderer2D AppLayer::renderer;
 
 App::App(int width, int height, const std::string& title) {
     log.info("App Initialized");

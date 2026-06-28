@@ -2,8 +2,6 @@
 #include "types.hpp"
 #include <glad/gl.h>
 #include <vector>
-#include <format>
-#include <app.hpp>
 
 Buffer::Buffer(bool indices) {
     glGenVertexArrays(1, &VAO);

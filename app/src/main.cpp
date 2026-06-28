@@ -1,9 +1,8 @@
 #include "app.hpp"
 #include "renderer/buffer.hpp"
-#include "renderer/renderer.hpp"
+#include "renderer/renderer2d.hpp"
 #include "renderer/shader.hpp"
 #include "types.hpp"
-
 #include <memory>
 #include <vector>
 
@@ -14,7 +13,6 @@ public:
     ClearLayer() {};
     void update() override {}
     void render() override { renderer.clearColor({0.20f, 0.61f, 0.92f, 1.0f}); }
-    void transition() override {}
 };
 
 class TriangleLayer : public AppLayer {
@@ -46,8 +44,6 @@ public:
         renderer.useShader(*triangleShader);
         renderer.drawBuffer(*triangleBuffer, 3);
     }
-
-    void transition() override {}
 
 private:
     std::vector<Vertex> vertices;

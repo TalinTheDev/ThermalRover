@@ -21,7 +21,7 @@ add_library(${PROJECT_NAME} STATIC)
 target_sources(${PROJECT_NAME} PRIVATE
     src/utils/logger.cpp
     src/window/window.cpp
-    src/renderer/renderer.cpp
+    "src/renderer/renderer2d.cpp"
     src/renderer/buffer.cpp
     src/types.cpp
     src/app.cpp

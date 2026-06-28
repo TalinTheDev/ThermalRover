@@ -1,14 +1,10 @@
 #include "renderer/shader.hpp"
-
-#include <fstream>
-#include <string>
-
-#define GLFW_INCLUDE_NONE
 #include <app.hpp>
 #include <format>
+#include <fstream>
 #include <glad/gl.h>
-#include <GLFW/glfw3.h>
 #include <iterator>
+#include <string>
 
 Shader::Shader(const char* vertexSourceFile, const char* fragSourceFile) {
     std::string vertexSource = loadShaderSource(vertexSourceFile);

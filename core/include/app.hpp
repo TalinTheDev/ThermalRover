@@ -1,11 +1,10 @@
 #pragma once
-#include "renderer/renderer.hpp"
+#include "renderer/renderer2d.hpp"
 #include "utils/logger.hpp"
 #include "window/window.hpp"
-
 #include <memory>
-#include <vector>
 #include <string>
+#include <vector>
 
 class AppLayer {
 public:
@@ -14,10 +13,8 @@ public:
     virtual void update() = 0;
     virtual void render() = 0;
 
-    virtual void transition() = 0;
-
 protected:
-    static Renderer renderer;
+    static Renderer2D renderer;
 };
 
 class App {
