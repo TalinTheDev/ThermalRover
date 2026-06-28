@@ -1,10 +1,8 @@
 #include "app.hpp"
-#include "layers/debug.hpp"
 #include "renderer/buffer.hpp"
 #include "renderer/renderer2d.hpp"
 #include "renderer/shader.hpp"
 #include "types.hpp"
-#include <imgui.h>
 #include <memory>
 #include <vector>
 
@@ -19,19 +17,11 @@ public:
 class TriangleLayer : public AppLayer {
 public:
     TriangleLayer() {
-        Vertex v1({0.0f,0.5f, 0.0f});
-        v1.color({1.0f, 0.0f, 0.0f, 1.0f});
-        vertices.push_back(v1);
+        vertices.emplace_back(Coordinate3D{-0.75f,0.75f, 0.0f}, Color{1.0f, 0.0f, 0.0f, 1.0f});
+        vertices.emplace_back(Coordinate3D{-0.75f,-0.75f, 0.0f}, Color{0.0f, 1.0f, 0.0f, 1.0f});
+        vertices.emplace_back(Coordinate3D{0.0f,-0.75f, 0.0f}, Color{0.0f, 0.0f, 1.0f, 1.0f});
 
-        Vertex v2({-0.5f,-0.5f, 0.0f});
-        v2.color({0.0f, 1.0f, 0.0f, 1.0f});
-        vertices.push_back(v2);
-
-        Vertex v3({0.5f,-0.5f, 0.0f});
-        v3.color({0.0f, 0.0f, 1.0f, 1.0f});
-        vertices.push_back(v3);
-
-        triangleBuffer = std::make_unique<Buffer>();
+        triangleBuffer = std::make_unique<Buffer>(false);
         triangleBuffer->data(vertices);
         triangleBuffer->shaderData(0, 3, tFloat, 7);
         triangleBuffer->shaderData(1, 4, tFloat, 7, 3);
@@ -52,22 +42,41 @@ private:
     std::unique_ptr<Shader> triangleShader;
 };
 
-void test() {
-    ImGui::Text("test");
-}
+class RectangleLayer : public AppLayer {
+public:
+    RectangleLayer() {
+        vertices.emplace_back(Coordinate3D{0.0f,0.75f, 0.0f}, Color{1.0f, 0.0f, 0.0f, 1.0f});
+        vertices.emplace_back(Coordinate3D{0.0f,-0.75f, 0.0f}, Color{0.0f, 1.0f, 0.0f, 1.0f});
+        vertices.emplace_back(Coordinate3D{0.75f,-0.75f, 0.0f}, Color{0.0f, 0.0f, 1.0f, 1.0f});
+        vertices.emplace_back(Coordinate3D{0.75f,0.75f, 0.0f}, Color{1.0f, 1.0f, 1.0f, 1.0f});
 
-void test2() {
-    ImGui::Begin("test2");
-    ImGui::Text("test2");
-    ImGui::End();
-}
+        rectangleBuffer = std::make_unique<Buffer>(true);
+        rectangleBuffer->data(vertices, {0, 1, 2, 2, 3, 0});
+        rectangleBuffer->shaderData(0, 3, tFloat, 7);
+        rectangleBuffer->shaderData(1, 4, tFloat, 7, 3);
+        rectangleShader = std::make_unique<Shader>("../../../../app/res/shaders/triangle/basic.vert", "../../../../app/res/shaders/triangle/basic.frag");
+    }
+
+    void update() override {}
+
+    void render() override {
+        rectangleShader->setUniformf("time", App::time() * 2);
+        renderer.useShader(*rectangleShader);
+        renderer.drawBuffer(*rectangleBuffer, 6);
+    }
+
+private:
+    std::vector<Vertex> vertices;
+    std::unique_ptr<Buffer> rectangleBuffer;
+    std::unique_ptr<Shader> rectangleShader;
+};
 
 int main() {
-    App app(1000, 500, "Hello World!");
+    App app(1300, 900, "Hello World!");
 
     app.newLayer<ClearLayer>();
     app.newLayer<TriangleLayer>();
+    app.newLayer<RectangleLayer>();
 
-    app.newLayer<DebugLayer>(app.getWindow()).push(test).push(test2);
     app.run();
 }

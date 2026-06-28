@@ -1,6 +1,9 @@
 #include "types.hpp"
 
 Vertex::Vertex(Coordinate3D coordinate) : coor(coordinate) {};
+Vertex::Vertex(Coordinate3D coordinate, Color color) : coor(coordinate), c(color), colorSet(true) {};
+Vertex::Vertex(Coordinate3D coordinate, Color color, Coordinate2D texCoordinate) : coor(coordinate), c(color), colorSet(true), tCoor(texCoordinate), texSet(true) {};
+
 Vertex::~Vertex() {};
 
 Coordinate3D& Vertex::coordinate() {

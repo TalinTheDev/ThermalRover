@@ -24,6 +24,8 @@ struct Color {
 class Vertex {
 public:
     Vertex(Coordinate3D coordinate);
+    Vertex(Coordinate3D coordinate, Color color);
+    Vertex(Coordinate3D coordinate, Color color, Coordinate2D texCoordinate);
     ~Vertex();
 
     Coordinate3D& coordinate();
