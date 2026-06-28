@@ -22,7 +22,10 @@ target_sources(${PROJECT_NAME} PRIVATE
     src/utils/logger.cpp
     src/window/window.cpp
     src/renderer/renderer.cpp
+    src/renderer/buffer.cpp
+    src/types.cpp
     src/app.cpp
+    src/renderer/shader.cpp
 )
 
 # Include directories
