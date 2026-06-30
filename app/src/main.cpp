@@ -3,15 +3,22 @@
 #include "renderer/renderer2d.hpp"
 #include "renderer/shader.hpp"
 #include "types.hpp"
+#include <cstdarg>
+#include <imgui.h>
+#include <layers/debug.hpp>
 #include <memory>
+#include <renderer/framebuffer.hpp>
 #include <vector>
 
+
+App app(1300, 900, "Hello World!");
 
 class ClearLayer : public AppLayer {
 public:
     ClearLayer() {};
+    void renderUI() override {}
     void update() override {}
-    void render() override { renderer.clearColor({0.20f, 0.61f, 0.92f, 1.0f}); }
+    void render() override { App::getRenderer().clearColor({0.20f, 0.61f, 0.92f, 1.0f}); }
 };
 
 class TriangleLayer : public AppLayer {
@@ -30,10 +37,11 @@ public:
 
     void update() override {}
 
+    void renderUI() override {}
     void render() override {
         triangleShader->setUniformf("time", App::time());
-        renderer.useShader(*triangleShader);
-        renderer.drawBuffer(*triangleBuffer, 3);
+        App::getRenderer().useShader(*triangleShader);
+        App::getRenderer().drawBuffer(*triangleBuffer, 3);
     }
 
 private:
@@ -58,11 +66,11 @@ public:
     }
 
     void update() override {}
-
+    void renderUI() override {}
     void render() override {
         rectangleShader->setUniformf("time", App::time() * 2);
-        renderer.useShader(*rectangleShader);
-        renderer.drawBuffer(*rectangleBuffer, 6);
+        App::getRenderer().useShader(*rectangleShader);
+        App::getRenderer().drawBuffer(*rectangleBuffer, 6);
     }
 
 private:
@@ -71,12 +79,25 @@ private:
     std::unique_ptr<Shader> rectangleShader;
 };
 
+void test() {
+    ImGui::Begin("Test Window");
+    ImVec2 size = ImGui::GetContentRegionAvail();
+    app.getFB().resize({size.x, size.y});
+    ImGui::Image(
+    (ImTextureID)(uintptr_t)app.getFB().getTexture(),
+        size,
+        ImVec2(0, 1),   // flip vertically
+        ImVec2(1, 0));
+    ImGui::End();
+}
+
 int main() {
-    App app(1300, 900, "Hello World!");
+    app.useFramebuffer();
 
     app.newLayer<ClearLayer>();
     app.newLayer<TriangleLayer>();
     app.newLayer<RectangleLayer>();
+    app.newLayer<DebugLayer>(app.getWindow()).push(test);
 
     app.run();
 }

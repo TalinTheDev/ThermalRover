@@ -27,6 +27,7 @@ target_sources(${PROJECT_NAME} PRIVATE
     src/app.cpp
     src/renderer/shader.cpp
     src/layers/debug.cpp
+    src/renderer/framebuffer.cpp
 )
 
 # Include directories

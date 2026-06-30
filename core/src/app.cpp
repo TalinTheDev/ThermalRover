@@ -8,9 +8,11 @@
 #define GLFW_INCLUDE_NONE
 #include <glad/gl.h>
 #include <GLFW/glfw3.h>
+#include <renderer/framebuffer.hpp>
+#include <types.hpp>
 
 Logger App::log;
-Renderer2D AppLayer::renderer;
+Renderer2D App::renderer;
 
 App::App(int width, int height, const std::string& title) {
     log.info("App Initialized");
@@ -39,7 +41,9 @@ void App::run() {
     while(running) {
         int width, height;
         glfwGetFramebufferSize(window->get(), &width, &height);
-        glViewport(0, 0, width, height);
+        if(!usingFB)  {
+            glViewport(0, 0, width, height);
+        }
 
         if(glfwWindowShouldClose(window->get())) {
             running = false;
@@ -51,8 +55,17 @@ void App::run() {
             layer->update();
         }
 
+        if(usingFB) {
+            fb->bind();
+        }
         for(auto& layer : layerStack) {
             layer->render();
+        }
+        if(usingFB) {
+            fb->unbind();
+        }
+        for(auto& layer : layerStack) {
+            layer->renderUI();
         }
 
         glfwSwapBuffers(window->get());
@@ -71,4 +84,38 @@ float App::time() {
 
 Window& App::getWindow() {
     return *window.get();
+}
+
+Renderer2D& App::getRenderer() {
+    return renderer;
+}
+
+
+FrameBuffer& App::getFB() {
+    if(!usingFB) {
+        App::log.error("Trying to use framebuffer rendering without buffer initialization");
+    }
+    return *fb.get();
+}
+
+void App::useFramebuffer() {
+    if(!usingFB) {
+        fb = std::make_unique<FrameBuffer>();
+        fb->bind();
+        glBindTexture(GL_TEXTURE_2D, fb->getTexture());
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, renderSize.x, renderSize.y, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
+        glViewport(0, 0, renderSize.x, renderSize.y);
+        usingFB = true;
+    }
+};
+void App::useScreenbuffer() {
+    if(usingFB) {
+        fb->unbind();
+        usingFB = false;
+    }
+};
+
+void App::setRenderSize(Vector2 size) {
+    renderSize.x = size.x;
+    renderSize.y = size.y;
 }

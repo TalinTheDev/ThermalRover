@@ -10,8 +10,8 @@ Renderer2D::Renderer2D() {
 Renderer2D::~Renderer2D() {};
 
 void Renderer2D::clearColor(Color color) {
-    glClear(GL_COLOR_BUFFER_BIT);
     glClearColor(color.r, color.g, color.b, color.a);
+    glClear(GL_COLOR_BUFFER_BIT);
 }
 
 void Renderer2D::drawBuffer(Buffer& buffer, uint vertexCount) {

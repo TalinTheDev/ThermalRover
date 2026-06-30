@@ -13,7 +13,7 @@ DebugLayer::DebugLayer(Window& window) {
     ImGuiIO& io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
-    io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
+    //io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
 
     ImGui_ImplGlfw_InitForOpenGL(window.get(), true);
     ImGui_ImplOpenGL3_Init();
@@ -26,13 +26,13 @@ DebugLayer::~DebugLayer() {
 }
 
 void DebugLayer::update() {}
-
-void DebugLayer::render() {
+void DebugLayer::render() {}
+void DebugLayer::renderUI() {
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
     // TODO: For the wanted docking setup
-    //ImGui::DockSpaceOverViewport();
+    ImGui::DockSpaceOverViewport();
 
     for(void(*func)() : debugStack) {
         func();

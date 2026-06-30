@@ -21,6 +21,11 @@ struct Color {
     float a = 0.0f;
 };
 
+struct Vector2 {
+    float x = 0.0f;
+    float y = 0.0f;
+};
+
 class Vertex {
 public:
     Vertex(Coordinate3D coordinate);

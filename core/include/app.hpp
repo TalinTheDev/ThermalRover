@@ -5,6 +5,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <renderer/framebuffer.hpp>
 
 class AppLayer {
 public:
@@ -12,9 +13,7 @@ public:
 
     virtual void update() = 0;
     virtual void render() = 0;
-
-protected:
-    static Renderer2D renderer;
+    virtual void renderUI() = 0;
 };
 
 class App {
@@ -37,11 +36,24 @@ public:
     }
 
     Window& getWindow();
+    FrameBuffer& getFB();
 
+    static Renderer2D& getRenderer();
+
+
+    void useFramebuffer();
+    void useScreenbuffer();
+
+
+    void setRenderSize(Vector2 size);
 private:
     bool running = true;
+    bool usingFB = false;
     std::vector<std::unique_ptr<AppLayer>> layerStack;
     std::unique_ptr<Window> window;
+    std::unique_ptr<FrameBuffer> fb;
+    static Renderer2D renderer;
+    Vector2 renderSize;
 
     static void errorCallback(int error, const char* description);
 };
