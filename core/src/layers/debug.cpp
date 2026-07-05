@@ -5,6 +5,7 @@
 #include "window/window.hpp"
 #include <GLFW/glfw3.h>
 #include <vector>
+#include <imgui_internal.h>
 
 DebugLayer::DebugLayer(Window& window) {
     IMGUI_CHECKVERSION();

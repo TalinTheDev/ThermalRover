@@ -11,7 +11,9 @@
 #include <vector>
 
 
-App app(1300, 900, "Hello World!");
+float width = 1300.0f;
+float height = 900.0f;
+App app((int)width, (int)height, "Hello World!");
 
 class ClearLayer : public AppLayer {
 public:
@@ -79,8 +81,25 @@ private:
     std::unique_ptr<Shader> rectangleShader;
 };
 
+static ImGuiWindowFlags flags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize;
+
+void test2() {
+  
+}
+
 void test() {
-    ImGui::Begin("Test Window");
+    Vector2 renderSize = app.getRenderSize();
+    width = renderSize.x;
+    height = renderSize.y;
+    ImGui::SetNextWindowPos({0,0});
+    ImGui::SetNextWindowSize({width * 0.2f, height});
+    ImGui::Begin("Left", 0, flags);
+    ImGui::Text("Left!");
+    ImGui::End();
+
+    ImGui::SetNextWindowPos({width * 0.2f,0});
+    ImGui::SetNextWindowSize({width * 0.6f, height});
+    ImGui::Begin("Scene", 0, flags);
     ImVec2 size = ImGui::GetContentRegionAvail();
     app.getFB().resize({size.x, size.y});
     ImGui::Image(
@@ -88,6 +107,12 @@ void test() {
         size,
         ImVec2(0, 1),   // flip vertically
         ImVec2(1, 0));
+    ImGui::End();
+
+    ImGui::SetNextWindowPos({width * 0.8f,0});
+    ImGui::SetNextWindowSize({width * 0.2f, height});
+    ImGui::Begin("Right", 0, flags);
+    ImGui::Text("Right!");
     ImGui::End();
 }
 
@@ -97,7 +122,7 @@ int main() {
     app.newLayer<ClearLayer>();
     app.newLayer<TriangleLayer>();
     app.newLayer<RectangleLayer>();
-    app.newLayer<DebugLayer>(app.getWindow()).push(test);
+    app.newLayer<DebugLayer>(app.getWindow()).push(test).push(test2);
 
     app.run();
 }

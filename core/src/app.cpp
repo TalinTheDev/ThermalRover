@@ -41,6 +41,8 @@ void App::run() {
     while(running) {
         int width, height;
         glfwGetFramebufferSize(window->get(), &width, &height);
+        renderSize.x = width;
+        renderSize.y = height;
         if(!usingFB)  {
             glViewport(0, 0, width, height);
         }
@@ -118,4 +120,8 @@ void App::useScreenbuffer() {
 void App::setRenderSize(Vector2 size) {
     renderSize.x = size.x;
     renderSize.y = size.y;
+}
+
+Vector2 App::getRenderSize() {
+    return renderSize;
 }

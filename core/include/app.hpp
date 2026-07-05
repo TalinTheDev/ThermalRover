@@ -46,6 +46,7 @@ public:
 
 
     void setRenderSize(Vector2 size);
+    Vector2 getRenderSize();
 private:
     bool running = true;
     bool usingFB = false;
