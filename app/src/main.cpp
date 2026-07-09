@@ -1,128 +1,114 @@
-#include "app.hpp"
-#include "renderer/buffer.hpp"
-#include "renderer/renderer2d.hpp"
-#include "renderer/shader.hpp"
-#include "types.hpp"
-#include <cstdarg>
-#include <imgui.h>
-#include <layers/debug.hpp>
-#include <memory>
-#include <renderer/framebuffer.hpp>
-#include <vector>
+#pragma comment(lib, "ws2_32.lib")
+#define WIN32_LEAN_AND_MEAN
+#include <cstdio>
+#include <windows.h>
+#include <winsock2.h>
+#include <ws2tcpip.h>
 
-
-float width = 1300.0f;
-float height = 900.0f;
-App app((int)width, (int)height, "Hello World!");
-
-class ClearLayer : public AppLayer {
-public:
-    ClearLayer() {};
-    void renderUI() override {}
-    void update() override {}
-    void render() override { App::getRenderer().clearColor({0.20f, 0.61f, 0.92f, 1.0f}); }
-};
-
-class TriangleLayer : public AppLayer {
-public:
-    TriangleLayer() {
-        vertices.emplace_back(Coordinate3D{-0.75f,0.75f, 0.0f}, Color{1.0f, 0.0f, 0.0f, 1.0f});
-        vertices.emplace_back(Coordinate3D{-0.75f,-0.75f, 0.0f}, Color{0.0f, 1.0f, 0.0f, 1.0f});
-        vertices.emplace_back(Coordinate3D{0.0f,-0.75f, 0.0f}, Color{0.0f, 0.0f, 1.0f, 1.0f});
-
-        triangleBuffer = std::make_unique<Buffer>(false);
-        triangleBuffer->data(vertices);
-        triangleBuffer->shaderData(0, 3, tFloat, 7);
-        triangleBuffer->shaderData(1, 4, tFloat, 7, 3);
-        triangleShader = std::make_unique<Shader>("../../../../app/res/shaders/triangle/basic.vert", "../../../../app/res/shaders/triangle/basic.frag");
-    }
-
-    void update() override {}
-
-    void renderUI() override {}
-    void render() override {
-        triangleShader->setUniformf("time", App::time());
-        App::getRenderer().useShader(*triangleShader);
-        App::getRenderer().drawBuffer(*triangleBuffer, 3);
-    }
-
-private:
-    std::vector<Vertex> vertices;
-    std::unique_ptr<Buffer> triangleBuffer;
-    std::unique_ptr<Shader> triangleShader;
-};
-
-class RectangleLayer : public AppLayer {
-public:
-    RectangleLayer() {
-        vertices.emplace_back(Coordinate3D{0.0f,0.75f, 0.0f}, Color{1.0f, 0.0f, 0.0f, 1.0f});
-        vertices.emplace_back(Coordinate3D{0.0f,-0.75f, 0.0f}, Color{0.0f, 1.0f, 0.0f, 1.0f});
-        vertices.emplace_back(Coordinate3D{0.75f,-0.75f, 0.0f}, Color{0.0f, 0.0f, 1.0f, 1.0f});
-        vertices.emplace_back(Coordinate3D{0.75f,0.75f, 0.0f}, Color{1.0f, 1.0f, 1.0f, 1.0f});
-
-        rectangleBuffer = std::make_unique<Buffer>(true);
-        rectangleBuffer->data(vertices, {0, 1, 2, 2, 3, 0});
-        rectangleBuffer->shaderData(0, 3, tFloat, 7);
-        rectangleBuffer->shaderData(1, 4, tFloat, 7, 3);
-        rectangleShader = std::make_unique<Shader>("../../../../app/res/shaders/triangle/basic.vert", "../../../../app/res/shaders/triangle/basic.frag");
-    }
-
-    void update() override {}
-    void renderUI() override {}
-    void render() override {
-        rectangleShader->setUniformf("time", App::time() * 2);
-        App::getRenderer().useShader(*rectangleShader);
-        App::getRenderer().drawBuffer(*rectangleBuffer, 6);
-    }
-
-private:
-    std::vector<Vertex> vertices;
-    std::unique_ptr<Buffer> rectangleBuffer;
-    std::unique_ptr<Shader> rectangleShader;
-};
-
-static ImGuiWindowFlags flags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize;
-
-void test2() {
-  
-}
-
-void test() {
-    Vector2 renderSize = app.getRenderSize();
-    width = renderSize.x;
-    height = renderSize.y;
-    ImGui::SetNextWindowPos({0,0});
-    ImGui::SetNextWindowSize({width * 0.2f, height});
-    ImGui::Begin("Left", 0, flags);
-    ImGui::Text("Left!");
-    ImGui::End();
-
-    ImGui::SetNextWindowPos({width * 0.2f,0});
-    ImGui::SetNextWindowSize({width * 0.6f, height});
-    ImGui::Begin("Scene", 0, flags);
-    ImVec2 size = ImGui::GetContentRegionAvail();
-    app.getFB().resize({size.x, size.y});
-    ImGui::Image(
-    (ImTextureID)(uintptr_t)app.getFB().getTexture(),
-        size,
-        ImVec2(0, 1),   // flip vertically
-        ImVec2(1, 0));
-    ImGui::End();
-
-    ImGui::SetNextWindowPos({width * 0.8f,0});
-    ImGui::SetNextWindowSize({width * 0.2f, height});
-    ImGui::Begin("Right", 0, flags);
-    ImGui::Text("Right!");
-    ImGui::End();
-}
+#define DEFAULT_PORT "27015"
+#define DEFAULT_BUF_LEN 512
 
 int main() {
-    app.useFramebuffer();
+    printf("Hello World: Networking Version\n");
+    WSADATA wsaData;
 
-    app.newLayer<ClearLayer>();
-    app.newLayer<TriangleLayer>();
-    app.newLayer<RectangleLayer>();
-    app.newLayer<DebugLayer>(app.getWindow()).push(test).push(test2);
+    int iResult = WSAStartup(MAKEWORD(2, 2), &wsaData);
+    if(iResult != 0) {
+        printf("WSAStartup failed: %d\n", iResult);
+        return 1;
+    }
 
-    app.run();
+    struct addrinfo* result = NULL, * ptr = NULL, hints;
+
+    ZeroMemory(&hints, sizeof(hints));
+    hints.ai_family = AF_INET;
+    hints.ai_socktype = SOCK_STREAM;
+    hints.ai_protocol = IPPROTO_TCP;
+    hints.ai_flags = AI_PASSIVE;
+
+    iResult = getaddrinfo(NULL, DEFAULT_PORT, &hints, &result);
+    if(iResult != 0) {
+        printf("getaddrinfo failed: %d\n", iResult);
+        WSACleanup();
+        return 1;
+    }
+
+    SOCKET ListenSocket = INVALID_SOCKET;
+    ListenSocket = socket(result->ai_family, result->ai_socktype, result->ai_protocol);
+    if(ListenSocket == INVALID_SOCKET) {
+        printf("Error at socket(): %ld\n", WSAGetLastError());
+        freeaddrinfo(result);
+        WSACleanup();
+        return 1;
+    }
+
+    iResult = bind(ListenSocket, result->ai_addr, (int)result->ai_addrlen);
+    if(iResult == SOCKET_ERROR) {
+        printf("bind failed with error: %d\n", WSAGetLastError());
+        freeaddrinfo(result);
+        closesocket(ListenSocket);
+        WSACleanup();
+        return 1;
+    }
+    freeaddrinfo(result);
+
+    if(listen(ListenSocket, SOMAXCONN) == SOCKET_ERROR) {
+        printf("Listen failed with error: %ld\n", WSAGetLastError());
+        closesocket(ListenSocket);
+        WSACleanup();
+        return 1;
+    }
+    while(1) {
+        SOCKET ClientSocket = INVALID_SOCKET;
+        ClientSocket = accept(ListenSocket, NULL, NULL);
+        if(ClientSocket == INVALID_SOCKET) {
+            printf("accept failed: %d\n", WSAGetLastError());
+            closesocket(ListenSocket);
+            WSACleanup();
+            return 1;
+        }
+
+        char recvbuf[DEFAULT_BUF_LEN];
+        int iSendResult;
+        int recvbuflen = DEFAULT_BUF_LEN;
+
+        do {
+            iResult = recv(ClientSocket, recvbuf, recvbuflen, 0);
+            if(iResult > 0) {
+                printf("Bytes received: %d\n", iResult);
+
+
+                iSendResult = send(ClientSocket, recvbuf, iResult, 0);
+                if(iSendResult == SOCKET_ERROR) {
+                    printf("send failed: %d\n", WSAGetLastError());
+                    closesocket(ClientSocket);
+                    WSACleanup();
+                    return 1;
+                }
+                printf("Bytes sent: %d\n", iSendResult);
+            } else if(iResult == 0) {
+                printf("Connection closing...\n");
+            } else {
+                printf("recv failed: %d\n", WSAGetLastError());
+                closesocket(ClientSocket);
+                WSACleanup();
+                return 1;
+            }
+        } while(iResult > 0);
+
+        iResult = shutdown(ClientSocket, SD_SEND);
+        if(iResult == SOCKET_ERROR) {
+            printf("shutdown failed: %d\n", WSAGetLastError());
+            closesocket(ClientSocket);
+            WSACleanup();
+            return 1;
+        }
+
+        closesocket(ClientSocket);
+    }
+
+    closesocket(ListenSocket);
+    WSACleanup();
+
+    return 0;
 }
