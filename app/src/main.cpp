@@ -49,7 +49,10 @@ int main() {
         closesocket(ListenSocket);
         WSACleanup();
         return 1;
+    } else {
+        printf("Waiting for UDP packets on port %s...\n", DEFAULT_PORT);
     }
+
     freeaddrinfo(result);
     while(true) {
         char buffer[DEFAULT_BUF_LEN] = "";
@@ -57,7 +60,7 @@ int main() {
         int clientAddressLen = (int)sizeof(clientAddress);
         int bytesReceived = recvfrom(ListenSocket, buffer, DEFAULT_BUF_LEN - 1, 0, (struct sockaddr*)&clientAddress, &clientAddressLen);
         if(bytesReceived == SOCKET_ERROR) {
-            printf("Couldn't receive data\n");
+            printf("recvfrom failed: %d\n", WSAGetLastError());
             continue;
         } else {
             buffer[bytesReceived] = '\0';
@@ -66,7 +69,7 @@ int main() {
 
         int byteSent = sendto(ListenSocket, (const char*)buffer, bytesReceived, 0, (struct sockaddr*)&clientAddress, clientAddressLen);
         if(byteSent == SOCKET_ERROR) {
-            printf("Error sending data\n");
+            printf("sendto failed: %d\n", WSAGetLastError());
             continue;
         } else {
             printf("Data sent\n");
