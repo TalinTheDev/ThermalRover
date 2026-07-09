@@ -22,8 +22,8 @@ int main() {
 
     ZeroMemory(&hints, sizeof(hints));
     hints.ai_family = AF_INET;
-    hints.ai_socktype = SOCK_STREAM;
-    hints.ai_protocol = IPPROTO_TCP;
+    hints.ai_socktype = SOCK_DGRAM;
+    hints.ai_protocol = IPPROTO_UDP;
     hints.ai_flags = AI_PASSIVE;
 
     iResult = getaddrinfo(NULL, DEFAULT_PORT, &hints, &result);
@@ -51,61 +51,29 @@ int main() {
         return 1;
     }
     freeaddrinfo(result);
-
-    if(listen(ListenSocket, SOMAXCONN) == SOCKET_ERROR) {
-        printf("Listen failed with error: %ld\n", WSAGetLastError());
-        closesocket(ListenSocket);
-        WSACleanup();
-        return 1;
-    }
-    while(1) {
-        SOCKET ClientSocket = INVALID_SOCKET;
-        ClientSocket = accept(ListenSocket, NULL, NULL);
-        if(ClientSocket == INVALID_SOCKET) {
-            printf("accept failed: %d\n", WSAGetLastError());
-            closesocket(ListenSocket);
-            WSACleanup();
-            return 1;
+    while(true) {
+        char buffer[DEFAULT_BUF_LEN] = "";
+        sockaddr_in clientAddress{};
+        int clientAddressLen = (int)sizeof(clientAddress);
+        int bytesReceived = recvfrom(ListenSocket, buffer, DEFAULT_BUF_LEN - 1, 0, (struct sockaddr*)&clientAddress, &clientAddressLen);
+        if(bytesReceived == SOCKET_ERROR) {
+            printf("Couldn't receive data\n");
+            continue;
+        } else {
+            buffer[bytesReceived] = '\0';
+            printf("Received %d bytes: %s\n", bytesReceived, buffer);
         }
 
-        char recvbuf[DEFAULT_BUF_LEN];
-        int iSendResult;
-        int recvbuflen = DEFAULT_BUF_LEN;
-
-        do {
-            iResult = recv(ClientSocket, recvbuf, recvbuflen, 0);
-            if(iResult > 0) {
-                printf("Bytes received: %d\n", iResult);
-
-
-                iSendResult = send(ClientSocket, recvbuf, iResult, 0);
-                if(iSendResult == SOCKET_ERROR) {
-                    printf("send failed: %d\n", WSAGetLastError());
-                    closesocket(ClientSocket);
-                    WSACleanup();
-                    return 1;
-                }
-                printf("Bytes sent: %d\n", iSendResult);
-            } else if(iResult == 0) {
-                printf("Connection closing...\n");
-            } else {
-                printf("recv failed: %d\n", WSAGetLastError());
-                closesocket(ClientSocket);
-                WSACleanup();
-                return 1;
-            }
-        } while(iResult > 0);
-
-        iResult = shutdown(ClientSocket, SD_SEND);
-        if(iResult == SOCKET_ERROR) {
-            printf("shutdown failed: %d\n", WSAGetLastError());
-            closesocket(ClientSocket);
-            WSACleanup();
-            return 1;
+        int byteSent = sendto(ListenSocket, (const char*)buffer, bytesReceived, 0, (struct sockaddr*)&clientAddress, clientAddressLen);
+        if(byteSent == SOCKET_ERROR) {
+            printf("Error sending data\n");
+            continue;
+        } else {
+            printf("Data sent\n");
         }
-
-        closesocket(ClientSocket);
     }
+
+
 
     closesocket(ListenSocket);
     WSACleanup();
