@@ -1,85 +1,77 @@
-#pragma comment(lib, "ws2_32.lib")
-#define WIN32_LEAN_AND_MEAN
-#include <cstdio>
-#include <windows.h>
-#include <winsock2.h>
-#include <ws2tcpip.h>
+#include "networking/socket.hpp"
+#include <mutex>
+#include <condition_variable>
+#include <string.h>
+#include <thread>
+#include <ws2def.h>
+#include <app.hpp>
+#include <format>
 
-#define DEFAULT_PORT "27015"
-#define DEFAULT_BUF_LEN 512
+const char* PORT = "3000";
+#define BUFFER_SIZE 1028
+
+std::mutex dataMutex;
+std::condition_variable newDataCV;
+char data[BUFFER_SIZE];
+int dataSize = 0;
+bool newData = false;
+
+
+void receiveData(Socket* sock) {
+    while(true) {
+        char tmpBuf[BUFFER_SIZE];
+        int size = sock->receive(tmpBuf, BUFFER_SIZE);
+        if(size > 0) {
+            {
+                std::scoped_lock lock(dataMutex);
+                memcpy(data, tmpBuf, size);
+                dataSize = size;
+                newData = true;
+            }
+            newDataCV.notify_one();
+        }
+    }
+}
+
+void sendData(Socket* sock) {
+    while(true) {
+        std::unique_lock lock(dataMutex);
+        newDataCV.wait(lock, [] {return newData; });
+
+        sock->send(data, dataSize);
+        memset(data, 0, dataSize);
+        dataSize = 0;
+        newData = false;
+    }
+}
+
 
 int main() {
-    printf("Hello World: Networking Version\n");
-    WSADATA wsaData;
-
-    int iResult = WSAStartup(MAKEWORD(2, 2), &wsaData);
-    if(iResult != 0) {
-        printf("WSAStartup failed: %d\n", iResult);
+    if(initNetworkingStack()) {
         return 1;
     }
 
-    struct addrinfo* result = NULL, * ptr = NULL, hints;
-
-    ZeroMemory(&hints, sizeof(hints));
-    hints.ai_family = AF_INET;
-    hints.ai_socktype = SOCK_DGRAM;
-    hints.ai_protocol = IPPROTO_UDP;
-    hints.ai_flags = AI_PASSIVE;
-
-    iResult = getaddrinfo(NULL, DEFAULT_PORT, &hints, &result);
-    if(iResult != 0) {
-        printf("getaddrinfo failed: %d\n", iResult);
-        WSACleanup();
+    AddrInfo addrInfo(PORT, AF_INET, IPPROTO_UDP);
+    if(!addrInfo.valid()) {
         return 1;
     }
 
-    SOCKET ListenSocket = INVALID_SOCKET;
-    ListenSocket = socket(result->ai_family, result->ai_socktype, result->ai_protocol);
-    if(ListenSocket == INVALID_SOCKET) {
-        printf("Error at socket(): %ld\n", WSAGetLastError());
-        freeaddrinfo(result);
-        WSACleanup();
+    Socket sock(addrInfo.get(), PORT);
+    if(!sock.valid()) {
         return 1;
     }
 
-    iResult = bind(ListenSocket, result->ai_addr, (int)result->ai_addrlen);
-    if(iResult == SOCKET_ERROR) {
-        printf("bind failed with error: %d\n", WSAGetLastError());
-        freeaddrinfo(result);
-        closesocket(ListenSocket);
-        WSACleanup();
+    sock.bindToSystem();
+    if(!sock.valid()) {
         return 1;
-    } else {
-        printf("Waiting for UDP packets on port %s...\n", DEFAULT_PORT);
     }
 
-    freeaddrinfo(result);
-    while(true) {
-        char buffer[DEFAULT_BUF_LEN] = "";
-        sockaddr_in clientAddress{};
-        int clientAddressLen = (int)sizeof(clientAddress);
-        int bytesReceived = recvfrom(ListenSocket, buffer, DEFAULT_BUF_LEN - 1, 0, (struct sockaddr*)&clientAddress, &clientAddressLen);
-        if(bytesReceived == SOCKET_ERROR) {
-            printf("recvfrom failed: %d\n", WSAGetLastError());
-            continue;
-        } else {
-            buffer[bytesReceived] = '\0';
-            printf("Received %d bytes: %s\n", bytesReceived, buffer);
-        }
+    std::thread receiver(receiveData, &sock);
+    std::thread sender(sendData, &sock);
 
-        int byteSent = sendto(ListenSocket, (const char*)buffer, bytesReceived, 0, (struct sockaddr*)&clientAddress, clientAddressLen);
-        if(byteSent == SOCKET_ERROR) {
-            printf("sendto failed: %d\n", WSAGetLastError());
-            continue;
-        } else {
-            printf("Data sent\n");
-        }
-    }
+    receiver.join();
+    sender.join();
 
-
-
-    closesocket(ListenSocket);
-    WSACleanup();
-
+    destroyNetworkingStack();
     return 0;
 }

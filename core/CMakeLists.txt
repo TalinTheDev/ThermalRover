@@ -28,7 +28,7 @@ target_sources(${PROJECT_NAME} PRIVATE
     src/renderer/shader.cpp
     src/layers/debug.cpp
     src/renderer/framebuffer.cpp
-)
+ "src/networking/socket.cpp")
 
 # Include directories
 target_include_directories(${PROJECT_NAME} PUBLIC include)
