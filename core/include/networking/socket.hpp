@@ -3,9 +3,12 @@
 #define WIN32_LEAN_AND_MEAN
 #include <winsock2.h>
 
-int initNetworkingStack();
-
-void destroyNetworkingStack();
+class NetworkStack {
+public:
+    NetworkStack();
+    ~NetworkStack();
+    bool valid = false;
+};
 
 class AddrInfo {
 public:

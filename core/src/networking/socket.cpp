@@ -5,20 +5,19 @@
 #include <WinSock2.h>
 #include <ws2def.h>
 #include <ws2tcpip.h>
-#include <mstcpip.h>
 
 #define SIO_UDP_CONNRESET _WSAIOW(IOC_VENDOR, 12)
 
-int initNetworkingStack() {
+NetworkStack::NetworkStack() {
     WSAData wsaData;
     int result = WSAStartup(MAKEWORD(2, 2), &wsaData);
     if(result != 0) {
         App::log.error(std::format("WSAStartup failed: {}", result));
-        return 1;
+
     }
-    return 0;
+    valid = true;
 }
-void destroyNetworkingStack() {
+NetworkStack::~NetworkStack() {
     WSACleanup();
 }
 

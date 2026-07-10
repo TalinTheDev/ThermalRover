@@ -17,7 +17,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 # Executable
 add_executable(${PROJECT_NAME}
     src/main.cpp
-)
+ "src/network.cpp")
 
 # Include directories
 target_include_directories(${PROJECT_NAME} PRIVATE include)
