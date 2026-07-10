@@ -1,18 +1,24 @@
 #include "app.hpp"
-#include <condition_variable>
-#include <functional>
 #include "imgui.h"
-#include "misc/cpp/imgui_stdlib.h"
 #include "layers/debug.hpp"
-#include <mutex>
+#include "misc/cpp/imgui_stdlib.h"
 #include "networking/udpserver.hpp"
+#include <condition_variable>
+#include <cstdint>
+#include <cstdio>
+#include <functional>
+#include <mutex>
 #include <queue>
 #include <string>
+#include <string.h>
+#include <string.h>
 #include <thread>
+#include <vector>
 
 UDPServer server(3000);
 std::string espIP = "192.168.1.23";
 unsigned short espPort = 27015;
+uint8_t buffer[BUFFER_LEN];
 
 std::queue<UDPPacket> toSend;
 std::mutex sendMutex;
@@ -22,10 +28,11 @@ void sendButton() {
     ImGui::Begin("Network");
     ImGui::InputText("IP", &espIP);
     ImGui::InputScalar("Port", ImGuiDataType_U16, &espPort);
-    if(ImGui::Button("Send", {100, 50})) {
+    if(ImGui::Button("Say Hello", {100, 50})) {
         {
             std::scoped_lock lock(sendMutex);
-            toSend.push({{'h', 'e', 'l', 'l', 'o'}, 5, {espIP, espPort}});
+            Packet packet(MESSAGE, NONE, STR_MSG{"Hello!"});
+            toSend.push({packet, {espIP, espPort}});
         }
         sendCV.notify_one();
     }
@@ -43,8 +50,16 @@ int main() {
         return 1;
     }
     std::thread recvThread(&UDPServer::loopRecv, &server);
-    std::thread sendThread(&UDPServer::loopSend, &server, std::ref(toSend), std::ref(sendMutex), std::ref(sendCV));
+    std::thread sendThread(&UDPServer::loopSend, &server, std::ref(toSend),
+                           std::ref(sendMutex), std::ref(sendCV));
     std::thread appThread(runApp);
+
+    {
+        std::scoped_lock lock(sendMutex);
+        Packet packet(MESSAGE, NONE, STR_MSG{"Hello!"});
+        toSend.push({packet, {espIP, espPort}});
+    }
+    sendCV.notify_one();
 
     recvThread.join();
     sendThread.join();

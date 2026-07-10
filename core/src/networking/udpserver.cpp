@@ -2,12 +2,16 @@
 #include "networking/udpserver.hpp"
 #include <array>
 #include <condition_variable>
+#include <cstdint>
+#include <cstdio>
 #include <format>
 #include <mutex>
 #include <queue>
 #include <sstream>
 #include <string>
+#include <string.h>
 #include <utility>
+#include <vector>
 #include <Windows.h>
 #include <WinSock2.h>
 #include <ws2def.h>
@@ -71,22 +75,25 @@ bool UDPServer::isHealthy() {
 }
 
 UDPPacket UDPServer::recv() {
-    std::array<char, BUFFER_LEN> buffer{};
+    uint8_t buffer[BUFFER_LEN];
     sockaddr_in clientAddr{};
     int clientAddrSize = sizeof(clientAddr);
-    int bytesReceived = recvfrom(sock, buffer.data(), buffer.size(), 0,
+    uint16_t bytesReceived = recvfrom(sock, (char*)buffer, BUFFER_LEN, 0,
                                  (struct sockaddr*)&clientAddr, &clientAddrSize);
 
     if(bytesReceived == SOCKET_ERROR) {
         App::log.error(
             std::format("Receiving request failed: {}", WSAGetLastError()));
-        return {{}, -1, {}};
+        return UDPPacket{Packet(), {}};
     } else {
         char ip[INET_ADDRSTRLEN];
         inet_ntop(AF_INET, &clientAddr.sin_addr, ip, sizeof(ip));
         PeerAddress client{.ip = std::string(ip),
                            .port = ntohs(clientAddr.sin_port)};
-        return {buffer, bytesReceived, client};
+
+        App::log.info(std::format("Received data from {}:{}", client.ip, client.port));
+        return UDPPacket{Packet((uint8_t*)buffer, bytesReceived), client
+    };
     }
 }
 
@@ -96,14 +103,13 @@ bool UDPServer::send(UDPPacket packet) {
     sendAddr.sin_port = htons(packet.peer.port);
 
     inet_pton(AF_INET, packet.peer.ip.c_str(), &sendAddr.sin_addr);
-
-    int bytesSent = sendto(sock, packet.data.data(), packet.size, 0, reinterpret_cast<sockaddr*>(&sendAddr), sizeof(sendAddr));
+    int bytesSent = sendto(sock, (const char*)packet.packet.buffer, packet.packet.size, 0, reinterpret_cast<sockaddr*>(&sendAddr), sizeof(sendAddr));
     if(bytesSent == SOCKET_ERROR) {
         App::log.error(
         std::format("Sending data failed: {}", WSAGetLastError()));
         return false;
     } else {
-        App::log.info(std::format("Sent data to {}:{}", packet.peer.ip, packet.peer.port));
+        App::log.info(std::format("Sent data (length {}) to {}:{}", packet.packet.size, packet.peer.ip, packet.peer.port));
         return true;
     }
 }
@@ -111,11 +117,6 @@ bool UDPServer::send(UDPPacket packet) {
 void UDPServer::loopRecv() {
     while(true) {
         UDPPacket p = recv();
-        std::stringstream data{};
-        for(int i = 0; i < p.size; i++) {
-            data << p.data[i];
-        }
-        App::log.info(std::format("Received data (length {}) {} from {}:{}", p.size, data.str(), p.peer.ip, p.peer.port));
     }
 }
 
