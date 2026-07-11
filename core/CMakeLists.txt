@@ -34,6 +34,9 @@ target_sources(${PROJECT_NAME} PRIVATE
 # Include directories
 target_include_directories(${PROJECT_NAME} PUBLIC include)
 
+# Libraries
+target_link_libraries(${PROJECT_NAME} PUBLIC ThermalRoverProtocol)
+
 # Vendored Libraries
 FetchContent_Declare(
     glfw

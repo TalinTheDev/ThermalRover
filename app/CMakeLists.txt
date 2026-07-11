@@ -24,6 +24,7 @@ target_include_directories(${PROJECT_NAME} PRIVATE include)
 
 # Libraries
 target_link_libraries(${PROJECT_NAME} PRIVATE ThermalRoverCore)
+target_link_libraries(${PROJECT_NAME} PRIVATE ThermalRoverProtocol)
 
 # Warnings
 if(MSVC)

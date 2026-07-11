@@ -15,6 +15,8 @@
 #include "lwip/sockets.h"
 #include <lwip/netdb.h>
 
+#include "protocol/udp.hpp"
+
 #define MAXIMUM_RETRY  5
 #define WIFI_CONNECTED_BIT BIT0
 #define WIFI_FAIL_BIT      BIT1
@@ -62,13 +64,12 @@ void wifi_init_sta(void) {
     ESP_ERROR_CHECK(esp_event_handler_instance_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &event_handler, NULL, &instance_any_id));
     ESP_ERROR_CHECK(esp_event_handler_instance_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &event_handler, NULL, &instance_got_ip));
 
-    wifi_config_t wifi_config = {
-        .sta = {
-            .ssid = "master oogway",
-            .password = "hilkudilku02",
-            .threshold.authmode = WIFI_AUTH_WPA2_PSK,
-        }
-    };
+    wifi_config_t wifi_config{};
+
+    strcpy(reinterpret_cast<char*>(wifi_config.sta.ssid), "master oogway");
+    strcpy(reinterpret_cast<char*>(wifi_config.sta.password), "hilkudilku02");
+
+    wifi_config.sta.threshold.authmode = WIFI_AUTH_WPA2_PSK;
 
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
     ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &wifi_config));
@@ -87,7 +88,7 @@ void wifi_init_sta(void) {
     }
 }
 
-void app_main(void) {
+extern "C" void app_main(void) {
     esp_err_t ret = nvs_flash_init();
     if(ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
         ESP_ERROR_CHECK(nvs_flash_erase());
@@ -110,7 +111,7 @@ void app_main(void) {
         dest_addr_ip4->sin_family = AF_INET;
         dest_addr_ip4->sin_port = htons(PORT);
         ip_protocol = IPPROTO_IP;
-        
+
         int sock = socket(AF_INET, SOCK_DGRAM, ip_protocol);
         if(sock < 0) {
             ESP_LOGE(TAG, "Unable to create socket: errno %d", errno);
