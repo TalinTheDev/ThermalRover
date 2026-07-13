@@ -4,6 +4,8 @@
 #include <string>
 
 constexpr unsigned int BUFFER_LEN = 512;
+static uint8_t packetsReceived = 1;
+static uint8_t packetsSent = 1;
 
 enum PacketType : uint8_t {
     MESSAGE = 0x00,
@@ -14,8 +16,9 @@ enum PacketType : uint8_t {
 
 enum PacketID : uint8_t {
     NONE = 0x00,
-    LED = 0x01,
-    MOVE = 0x02
+    STR = 0x01,
+    LED = 0x02,
+    MOVE = 0x03
 };
 
 struct LED_CMD {
@@ -31,6 +34,7 @@ struct PacketHeader {
     uint16_t length;
     PacketType type;
     PacketID id;
+    uint8_t seq;
 };
 
 class Packet {
@@ -38,12 +42,14 @@ public:
     template<typename T>
     Packet(PacketType type, PacketID id, T payload) {
         uint16_t payloadSize = sizeof(T);
+        printf("\nbefore %d\n", packetsSent);
         PacketHeader header{
             payloadSize,
             type,
-            id
+            id,
+            packetsSent++
         };
-
+        printf("\nafter %d\n", packetsSent);
         memcpy(buffer, &header, sizeof(header));
         memcpy(buffer + sizeof(header), &payload, payloadSize);
         size = sizeof(header) + payloadSize;

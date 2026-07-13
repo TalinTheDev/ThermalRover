@@ -32,7 +32,7 @@ void sendButton() {
     if(ImGui::Button("Say Hello", {100, 50})) {
         {
             std::scoped_lock lock(sendMutex);
-            Packet packet(MESSAGE, NONE, STR_MSG{"Hello!"});
+            Packet packet(MESSAGE, STR, STR_MSG{"Hello!"});
             toSend.push({packet, {espIP, espPort}});
         }
         sendCV.notify_one();
@@ -54,13 +54,6 @@ int main() {
     std::thread sendThread(&UDPServer::loopSend, &server, std::ref(toSend),
                            std::ref(sendMutex), std::ref(sendCV));
     std::thread appThread(runApp);
-
-    {
-        std::scoped_lock lock(sendMutex);
-        Packet packet(MESSAGE, NONE, STR_MSG{"Hello!"});
-        toSend.push({packet, {espIP, espPort}});
-    }
-    sendCV.notify_one();
 
     recvThread.join();
     sendThread.join();

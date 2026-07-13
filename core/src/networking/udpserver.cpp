@@ -87,6 +87,16 @@ UDPPacket UDPServer::recv() {
             std::format("Receiving request failed: {}", WSAGetLastError()));
         return UDPPacket{Packet(), {}};
     } else {
+        PacketHeader header;
+        memcpy(&header, buffer, sizeof(header));
+        printf("\nrecv: %d\n", header.seq);
+        if(header.seq > packetsReceived - 1) {
+            packetsReceived++;
+            App::log.info("New packet received");
+        } else {
+            return UDPPacket{Packet(), {}};
+        }
+
         char ip[INET_ADDRSTRLEN];
         inet_ntop(AF_INET, &clientAddr.sin_addr, ip, sizeof(ip));
         PeerAddress client{.ip = std::string(ip),
@@ -110,6 +120,9 @@ bool UDPServer::send(UDPPacket packet) {
         std::format("Sending data failed: {}", WSAGetLastError()));
         return false;
     } else {
+        uint8_t seq;
+        memcpy(&seq, packet.packet.buffer + 4, 1);
+        printf("\nsending: %d\n", seq);
         App::log.info(std::format("Sent data (length {}) to {}:{}", packet.packet.size, packet.peer.ip, packet.peer.port));
         return true;
     }

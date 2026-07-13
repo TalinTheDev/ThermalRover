@@ -21,7 +21,6 @@
 #define WIFI_CONNECTED_BIT BIT0
 #define WIFI_FAIL_BIT      BIT1
 #define PORT 27015
-#define DEFAULT_BUF_LEN 128
 
 EventGroupHandle_t s_wifi_event_group;
 static unsigned int s_retry_num = 0;
@@ -88,6 +87,29 @@ void wifi_init_sta(void) {
     }
 }
 
+void parsePacket(char* buf) {
+    PacketHeader header;
+    memcpy(&header, buf, sizeof(header));
+
+    switch(header.type) {
+        using enum PacketType;
+        using enum PacketID;
+        case MESSAGE:
+            switch(header.id) {
+                case STR:
+                    STR_MSG msg;
+                    memcpy(&msg, buf + sizeof(header), header.length);
+                    ESP_LOGI(TAG, "Received message %s", msg.str);
+                    break;
+                default:
+                    ESP_LOGI(TAG, "Received message but do not know how to read it");
+            }
+            break;
+        default:
+            ESP_LOGI(TAG, "Received something else (type: %02hhX)", buf[3]);
+    };
+}
+
 extern "C" void app_main(void) {
     esp_err_t ret = nvs_flash_init();
     if(ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
@@ -102,8 +124,8 @@ extern "C" void app_main(void) {
     struct sockaddr_in dest_addr;
     memset(&dest_addr, 0, sizeof(dest_addr));
     int ip_protocol = 0;
-    char rx_buffer[DEFAULT_BUF_LEN];
-    char addr_str[DEFAULT_BUF_LEN];
+    char rx_buffer[BUFFER_LEN];
+    char addr_str[BUFFER_LEN];
 
     while(true) {
         struct sockaddr_in* dest_addr_ip4 = &dest_addr;
@@ -141,6 +163,10 @@ extern "C" void app_main(void) {
             int len = recvfrom(sock, rx_buffer, sizeof(rx_buffer) - 1, 0, (struct sockaddr*)&source_addr, &socklen);
 
             if(len < 0) {
+                if(errno == 11) {
+                    continue;
+                }
+
                 ESP_LOGE(TAG, "recvfrom failed: errno %d", errno);
                 break;
             } else {
@@ -149,7 +175,7 @@ extern "C" void app_main(void) {
                 }
                 rx_buffer[len] = 0;
                 ESP_LOGI(TAG, "Received %d bytes from %s", len, addr_str);
-                ESP_LOGI(TAG, "%s", rx_buffer);
+                parsePacket(rx_buffer);
 
                 int err = sendto(sock, rx_buffer, len, 0, (struct sockaddr*)&source_addr, sizeof(source_addr));
                 if(err < 0) {
