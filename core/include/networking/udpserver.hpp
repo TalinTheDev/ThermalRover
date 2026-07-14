@@ -21,8 +21,9 @@ public:
 
     bool isHealthy();
 
-    void loopRecv();
+    void loopRecv(std::vector<UDPPacket>&received);
     void loopSend(std::queue<UDPPacket>& toSend, std::mutex& sendMutex, std::condition_variable& sendCV);
+    void kill();
 
 private:
     bool healthy = false;

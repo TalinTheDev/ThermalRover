@@ -42,14 +42,12 @@ public:
     template<typename T>
     Packet(PacketType type, PacketID id, T payload) {
         uint16_t payloadSize = sizeof(T);
-        printf("\nbefore %d\n", packetsSent);
         PacketHeader header{
             payloadSize,
             type,
             id,
             packetsSent++
         };
-        printf("\nafter %d\n", packetsSent);
         memcpy(buffer, &header, sizeof(header));
         memcpy(buffer + sizeof(header), &payload, payloadSize);
         size = sizeof(header) + payloadSize;
@@ -58,6 +56,7 @@ public:
     Packet(uint8_t* buffer_, uint16_t size) : size(size) {
         memcpy(buffer, buffer_, size);
     }
+
     Packet() {}
 
     ~Packet() {}

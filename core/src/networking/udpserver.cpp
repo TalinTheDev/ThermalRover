@@ -89,10 +89,8 @@ UDPPacket UDPServer::recv() {
     } else {
         PacketHeader header;
         memcpy(&header, buffer, sizeof(header));
-        printf("\nrecv: %d\n", header.seq);
         if(header.seq > packetsReceived - 1) {
             packetsReceived++;
-            App::log.info("New packet received");
         } else {
             return UDPPacket{Packet(), {}};
         }
@@ -103,8 +101,9 @@ UDPPacket UDPServer::recv() {
                            .port = ntohs(clientAddr.sin_port)};
 
         App::log.info(std::format("Received data from {}:{}", client.ip, client.port));
-        return UDPPacket{Packet((uint8_t*)buffer, bytesReceived), client
-    };
+        UDPPacket p{Packet((uint8_t*)buffer, bytesReceived), client
+        };
+        return p;
     }
 }
 
@@ -122,20 +121,20 @@ bool UDPServer::send(UDPPacket packet) {
     } else {
         uint8_t seq;
         memcpy(&seq, packet.packet.buffer + 4, 1);
-        printf("\nsending: %d\n", seq);
         App::log.info(std::format("Sent data (length {}) to {}:{}", packet.packet.size, packet.peer.ip, packet.peer.port));
         return true;
     }
 }
 
-void UDPServer::loopRecv() {
-    while(true) {
-        UDPPacket p = recv();
+void UDPServer::loopRecv(std::vector<UDPPacket>& received) {
+    while(this->healthy) {
+        received.push_back(recv());
     }
+    printf("Exiting loop recv\n");
 }
 
 void UDPServer::loopSend(std::queue<UDPPacket>& toSend, std::mutex& sendMutex, std::condition_variable& sendCV) {
-    while(true) {
+    while(this->healthy) {
         UDPPacket p;
         {
             std::unique_lock lock(sendMutex);
@@ -145,4 +144,10 @@ void UDPServer::loopSend(std::queue<UDPPacket>& toSend, std::mutex& sendMutex, s
         }
         send(p);
     }
+
+    printf("Exiting loop recv\n");
+}
+
+void UDPServer::kill() {
+    healthy = false;
 }

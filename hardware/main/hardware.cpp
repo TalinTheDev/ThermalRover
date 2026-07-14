@@ -175,6 +175,9 @@ extern "C" void app_main(void) {
                 }
                 rx_buffer[len] = 0;
                 ESP_LOGI(TAG, "Received %d bytes from %s", len, addr_str);
+                for(int i = 0; i < len; i++) {
+                    printf("%x", rx_buffer[i]);
+                }
                 parsePacket(rx_buffer);
 
                 int err = sendto(sock, rx_buffer, len, 0, (struct sockaddr*)&source_addr, sizeof(source_addr));
