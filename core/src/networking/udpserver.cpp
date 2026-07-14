@@ -130,7 +130,6 @@ void UDPServer::loopRecv(std::vector<UDPPacket>& received) {
     while(this->healthy) {
         received.push_back(recv());
     }
-    printf("Exiting loop recv\n");
 }
 
 void UDPServer::loopSend(std::queue<UDPPacket>& toSend, std::mutex& sendMutex, std::condition_variable& sendCV) {
@@ -144,8 +143,6 @@ void UDPServer::loopSend(std::queue<UDPPacket>& toSend, std::mutex& sendMutex, s
         }
         send(p);
     }
-
-    printf("Exiting loop recv\n");
 }
 
 void UDPServer::kill() {
