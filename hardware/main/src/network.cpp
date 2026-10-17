@@ -5,6 +5,7 @@
 #include "freertos/idf_additions.h"
 #include "freertos/task.h"
 #include <cstddef>
+#include <cstdio>
 #include <machine/endian.h>
 #include <string.h>
 
@@ -87,6 +88,18 @@ int UDPServer::createSocket() {
   }
   ESP_LOGI(WIFI_TAG, "Socket bound on port %d", PORT);
 
+  port = PORT;
+  esp_netif_t *netif = esp_netif_get_handle_from_ifkey("WIFI_STA_DEF");
+  if (!netif) {
+    ESP_LOGE(WIFI_TAG, "Failed to get netif to read IP");
+    sprintf(ip, "N/A");
+  }
+
+  esp_netif_ip_info_t ipStr;
+  if (esp_netif_get_ip_info(netif, &ipStr) == ESP_OK) {
+    snprintf(ip, sizeof(ip), IPSTR, IP2STR(&ipStr.ip));
+  }
+
   return sock;
 }
 
@@ -115,12 +128,13 @@ UDPPacket UDPServer::parsePacket(char *buf, uint8_t bytesReceived,
 
   char ip[INET_ADDRSTRLEN];
   inet_ntop(AF_INET, &clientAddr.sin_addr, ip, sizeof(ip));
-  PeerAddress client{.ip = std::string(ip), .port = ntohs(clientAddr.sin_port)};
+  PeerAddress client{.ip = "", .port = ntohs(clientAddr.sin_port)};
+  memcpy(client.ip, ip, IP_LEN);
   UDPPacket p{Packet((uint8_t *)buf, bytesReceived), client};
   return p;
 }
 
-void UDPServer::listen() {
+void UDPServer::loopListen() {
   char recvBuffer[BUFFER_LEN];
   sockaddr_in clientAddr{};
   socklen_t clientAddrSize = sizeof(clientAddr);
@@ -140,14 +154,14 @@ void UDPServer::listen() {
       UDPPacket *p =
           new UDPPacket(parsePacket(recvBuffer, bytesReceived, clientAddr));
       ESP_LOGI(WIFI_TAG, "Received %d bytes from %s:%d", bytesReceived,
-               p->peer.ip.c_str(), p->peer.port);
+               p->peer.ip, p->peer.port);
 
       xQueueSend(toSend, &p, portMAX_DELAY);
     }
   }
 }
 
-void UDPServer::send() {
+void UDPServer::loopSend() {
   UDPPacket *packet;
   while (true) {
     {
@@ -157,7 +171,7 @@ void UDPServer::send() {
       sendAddr.sin_family = AF_INET;
       sendAddr.sin_port = htons(packet->peer.port);
 
-      inet_pton(AF_INET, packet->peer.ip.c_str(), &sendAddr.sin_addr);
+      inet_pton(AF_INET, packet->peer.ip, &sendAddr.sin_addr);
 
       int bytesSent =
           sendto(sock, (const char *)packet->packet.buffer, packet->packet.size,
@@ -167,7 +181,7 @@ void UDPServer::send() {
         ESP_LOGE(WIFI_TAG, "Error occurred during sending...error %d", errno);
       } else {
         ESP_LOGI(WIFI_TAG, "Sent %d bytes to %s:%d", bytesSent,
-                 packet->peer.ip.c_str(), packet->peer.port);
+                 packet->peer.ip, packet->peer.port);
       }
       delete packet;
     }
@@ -184,3 +198,9 @@ UDPServer::UDPServer() {
 }
 
 bool UDPServer::healthy() { return sock > 0; }
+
+void UDPServer::send(Packet *packet, const char *ip, unsigned short port) {
+  UDPPacket *p = new UDPPacket{*packet, PeerAddress{.ip = "", .port = port}};
+  memcpy(p->peer.ip, ip, IP_LEN);
+  xQueueSend(toSend, &p, portMAX_DELAY);
+}

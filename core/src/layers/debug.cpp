@@ -18,6 +18,9 @@ DebugLayer::DebugLayer(Window& window) {
 
     ImGui_ImplGlfw_InitForOpenGL(window.get(), true);
     ImGui_ImplOpenGL3_Init();
+
+    ImGuiStyle& style = ImGui::GetStyle();
+    style.FontSizeBase = 16;
 }
 
 DebugLayer::~DebugLayer() {

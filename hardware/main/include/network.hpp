@@ -8,6 +8,7 @@
 #include "freertos/task.h"
 #include "protocol/udp.hpp"
 
+#include <concepts>
 #include <sys/param.h>
 
 #include <lwip/netdb.h>
@@ -26,11 +27,14 @@ public:
   UDPServer();
 
   bool healthy();
-  void listen();
-  void send();
+  void loopListen();
+  void loopSend();
+  void send(Packet *packet, const char* ip, unsigned short port);
 
-  static void taskListen(void *arg) { static_cast<UDPServer *>(arg)->listen(); }
-  static void taskSend(void *arg) { static_cast<UDPServer *>(arg)->send(); }
+  static void taskListen(void *arg) {
+    static_cast<UDPServer *>(arg)->loopListen();
+  }
+  static void taskSend(void *arg) { static_cast<UDPServer *>(arg)->loopSend(); }
   static void eventHandler(void *arg, esp_event_base_t eventBase,
                            int32_t eventID, void *eventData) {
     if (eventBase == WIFI_EVENT && eventID == WIFI_EVENT_STA_START) {
@@ -52,6 +56,9 @@ public:
       xEventGroupSetBits(wifiEventGroup, WIFI_CONNECTED_BIT);
     }
   }
+
+  char ip[IP_LEN];
+  unsigned short port;
 
 private:
   int sock = -1;

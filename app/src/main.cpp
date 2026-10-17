@@ -35,23 +35,32 @@ int height = 1000;
 App app(width, height, "Networking stack");
 static ImGuiWindowFlags flags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize;
 
+ESP_STATUS status{};
+
 void network() {
     Vector2 renderSize = app.getRenderSize();
     width = renderSize.x;
     height = renderSize.y;
     ImGui::SetNextWindowPos({0,0});
     ImGui::SetNextWindowSize({width * 0.2f, height * 1.0f});
-    ImGui::Begin("Network", 0, flags);
-    ImGui::InputText("IP", &espIP);
-    ImGui::InputScalar("Port", ImGuiDataType_U16, &espPort);
+    ImGui::Begin("Left", 0, flags);
+    ImGui::Text("ESP Status");
+    ImGui::Text("Battery: %.2f%% @ %.3f", status.batteryP, status.batteryV);
+    ImGui::Text("IP: %.*s", IP_LEN, status.ip);
+    ImGui::Text("Port: %d", status.port);
+    ImGui::Text("Networking");
+    ImGui::InputText("Send IP", &espIP);
+    ImGui::InputScalar("Send Port", ImGuiDataType_U16, &espPort);
     ImGui::InputText("Message", &msg);
-    if(ImGui::Button("Send Message", {100, 50})) {
+    if(ImGui::Button("Send Message", {250, 25})) {
         {
             std::scoped_lock lock(sendMutex);
             STR_MSG str{};
             memcpy(&str.str, msg.c_str(), msg.length());
             Packet packet(MESSAGE, STR, str);
-            toSend.push({packet, {espIP, espPort}});
+            UDPPacket p = {packet, {"", espPort}};
+            memcpy(p.peer.ip, espIP.c_str(), sizeof(p.peer.ip));
+            toSend.push(p);
         }
         sendCV.notify_one();
     }
@@ -61,8 +70,11 @@ void network() {
         memcpy(&header, p.packet.buffer, sizeof(header));
         if(header.type == MESSAGE) {
             STR_MSG msg;
-            memcpy(&msg, p.packet.buffer + sizeof(header), 128);
+            memcpy(&msg, p.packet.buffer + sizeof(header), sizeof(STR_MSG));
             ImGui::BulletText(std::format("{}: {}", header.seq, msg.str).c_str());
+        } else if(header.type == STATUS) {
+            char ip[IP_LEN]{};
+            memcpy(&status, p.packet.buffer + sizeof(header), sizeof(status));
         }
     }
     ImGui::End();
@@ -77,6 +89,7 @@ int main() {
     if(!server.isHealthy()) {
         return 1;
     }
+
     std::thread recvThread(&UDPServer::loopRecv, &server, std::ref(messagesReceived));
     std::thread sendThread(&UDPServer::loopSend, &server, std::ref(toSend),
                            std::ref(sendMutex), std::ref(sendCV));
