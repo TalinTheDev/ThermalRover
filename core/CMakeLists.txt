@@ -27,8 +27,15 @@ target_sources(${PROJECT_NAME} PRIVATE
     src/app.cpp
     src/renderer/shader.cpp
     src/layers/debug.cpp
+    src/layers/slam_map.cpp
     src/renderer/framebuffer.cpp
+    src/renderer/thermal_map_renderer.cpp
     src/networking/udpserver.cpp
+    src/mapping/slam.cpp
+    src/mapping/thermal_scale.cpp
+    src/mapping/localization.cpp
+    src/mapping/lidar_packet_parser.cpp
+    src/mapping/sensor_stream_decoder.cpp
 )
 
 # Include directories
