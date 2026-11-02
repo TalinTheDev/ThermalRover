@@ -24,6 +24,7 @@ FrameBuffer::FrameBuffer() {
 
 FrameBuffer::~FrameBuffer() {
     glDeleteFramebuffers(1, &FBO);
+    glDeleteTextures(1, &texture);
 }
 
 void FrameBuffer::bind() const {

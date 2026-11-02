@@ -17,7 +17,9 @@ Window::Window(int width, int height, const std::string& title, Logger& log) {
 };
 
 Window::~Window() {
-    glfwDestroyWindow(id);
+    if(id != nullptr) {
+        glfwDestroyWindow(id);
+    }
 };
 
 GLFWwindow* Window::get() {

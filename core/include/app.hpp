@@ -18,13 +18,14 @@ public:
 
 class App {
 public:
-    App(int width, int height, const std::string& title);
+    App(int width, int height, const std::string& title, bool visible = true);
     ~App();
 
     static Logger log;
 
     void run();
     void terminate();
+    void shutdown();
 
     static float time();
 
@@ -37,6 +38,7 @@ public:
 
     Window& getWindow();
     FrameBuffer& getFB();
+    bool isInitialized() const;
 
     static Renderer2D& getRenderer();
 
@@ -50,6 +52,8 @@ public:
 private:
     bool running = true;
     bool usingFB = false;
+    bool initialized = false;
+    bool shutdownComplete = false;
     std::vector<std::unique_ptr<AppLayer>> layerStack;
     std::unique_ptr<Window> window;
     std::unique_ptr<FrameBuffer> fb;

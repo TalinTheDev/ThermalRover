@@ -14,27 +14,51 @@
 Logger App::log;
 Renderer2D App::renderer;
 
-App::App(int width, int height, const std::string& title) {
+App::App(int width, int height, const std::string& title, bool visible) {
     log.info("App Initialized");
 
     glfwSetErrorCallback(errorCallback);
     if(!glfwInit()) {
         log.error("GLFW Initialization failed");
+        return;
     }
 
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    glfwWindowHint(GLFW_VISIBLE, visible ? GLFW_TRUE : GLFW_FALSE);
 
     window = std::make_unique<Window>(width, height, title, log);
+    if(window->get() == nullptr) {
+        return;
+    }
 
     glfwMakeContextCurrent(window->get());
-    gladLoadGL(glfwGetProcAddress);
+    initialized = gladLoadGL(glfwGetProcAddress) != 0;
+    if(!initialized) {
+        log.error("OpenGL loader initialization failed");
+    }
 };
 
-App::~App() { glfwTerminate(); };
+App::~App() {
+    shutdown();
+}
+
+void App::shutdown() {
+    if(shutdownComplete) return;
+    layerStack.clear();
+    fb.reset();
+    window.reset();
+    glfwTerminate();
+    initialized = false;
+    running = false;
+    shutdownComplete = true;
+}
 
 void App::run() {
+    if(!initialized || !window) {
+        return;
+    }
     running = true;
 
     glfwSwapInterval(1);
@@ -60,6 +84,8 @@ void App::run() {
         if(usingFB) {
             fb->bind();
         }
+        glClearColor(0.035f, 0.045f, 0.060f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT);
         for(auto& layer : layerStack) {
             layer->render();
         }
@@ -74,7 +100,12 @@ void App::run() {
     }
 };
 
-void App::terminate() { glfwTerminate(); }
+void App::terminate() {
+    running = false;
+    if(window != nullptr && window->get() != nullptr) {
+        glfwSetWindowShouldClose(window->get(), GLFW_TRUE);
+    }
+}
 
 void App::errorCallback(int error, const char* description) {
     log.error(std::format("GLFW Error ({}): {}", error, description));
@@ -98,6 +129,10 @@ FrameBuffer& App::getFB() {
         App::log.error("Trying to use framebuffer rendering without buffer initialization");
     }
     return *fb.get();
+}
+
+bool App::isInitialized() const {
+    return initialized;
 }
 
 void App::useFramebuffer() {
