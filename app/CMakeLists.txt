@@ -17,6 +17,9 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 # Executable
 add_executable(${PROJECT_NAME}
     src/main.cpp
+    src/session_store.cpp
+    src/ui_theme.cpp
+    src/rover_commands.cpp
  )
 
 # Include directories
@@ -25,6 +28,9 @@ target_include_directories(${PROJECT_NAME} PRIVATE include)
 # Libraries
 target_link_libraries(${PROJECT_NAME} PRIVATE ThermalRoverCore)
 target_link_libraries(${PROJECT_NAME} PRIVATE ThermalRoverProtocol)
+target_link_libraries(${PROJECT_NAME} PRIVATE winsqlite3)
+
+thermal_rover_bundle_fonts(${PROJECT_NAME})
 
 # Warnings
 if(MSVC)
