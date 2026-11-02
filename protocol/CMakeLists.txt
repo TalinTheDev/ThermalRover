@@ -19,6 +19,8 @@ add_library(${PROJECT_NAME} STATIC)
 
 target_sources(${PROJECT_NAME} PRIVATE
     src/protocol/udp.cpp
+    src/protocol/lidar_imu_odometry.cpp
+    src/protocol/motion_control.cpp
 )
 
 # Include directories
